@@ -10,7 +10,7 @@
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <PackageId>FreshlianceGateway.Sdk</PackageId>
     <Version>1.0.0-preview.1</Version>
-    <Authors>Freshliance</Authors>
+    <Authors>medtech</Authors>
     <Description>.NET SDK for the Freshliance Gateway Partner API</Description>
     <PackageTags>freshliance;gateway;iot;sensor;temperature;humidity;api</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
