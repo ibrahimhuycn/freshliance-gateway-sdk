@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="FreshlianceGateway.Samples.Cli/FreshlianceGateway.Samples.Cli.csproj" />
+  <Project Path="FreshlianceGateway.Sdk.IntegrationTests/FreshlianceGateway.Sdk.IntegrationTests.csproj" />
+  <Project Path="FreshlianceGateway.Sdk.Tests/FreshlianceGateway.Sdk.Tests.csproj" />
+  <Project Path="FreshlianceGateway.Sdk/FreshlianceGateway.Sdk.csproj" />
+</Solution>
