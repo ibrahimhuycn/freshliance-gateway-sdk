@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Template;
 
 /// <summary>
 /// Request DTO for retrieving a paginated list of device templates, optionally filtered by template name.
 /// </summary>
-public class GetTemplatePageRequest
+public class GetTemplatePageRequest : IBizContent
 {
     /// <summary>
     /// The page number to retrieve (1-based).

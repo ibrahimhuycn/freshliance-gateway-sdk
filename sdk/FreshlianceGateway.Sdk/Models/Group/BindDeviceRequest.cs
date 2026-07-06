@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Group;
 
 /// <summary>
 /// Request model for binding one or more devices to a group.
 /// </summary>
-public class BindDeviceRequest
+public class BindDeviceRequest : IBizContent
 {
     /// <summary>
     /// The array of user-device association identifiers to bind.

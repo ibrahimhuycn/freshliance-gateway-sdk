@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Group;
 
 /// <summary>
 /// Request model for unbinding a device from a group.
 /// </summary>
-public class UnbindDeviceRequest
+public class UnbindDeviceRequest : IBizContent
 {
     /// <summary>
     /// The user-device association identifier to unbind.

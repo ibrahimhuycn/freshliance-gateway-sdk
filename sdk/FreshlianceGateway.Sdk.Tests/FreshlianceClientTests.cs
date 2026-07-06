@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using FreshlianceGateway.Sdk.Core;
+using FreshlianceGateway.Sdk.Models.Device;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
@@ -91,7 +92,7 @@ public class FreshlianceClientTests
         var options = Options.Create(CreateOptions());
 
         var client = new FreshlianceClient(httpClient, options, signer);
-        var bizContent = new { pageNum = 1, pageSize = 10 };
+        var bizContent = new GetDevicePageRequest { PageNum = 1, PageSize = 10 };
         var ct = TestContext.Current.CancellationToken;
         await client.PostAsync<object>("test.method", bizContent, ct);
 

@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Command;
 
 /// <summary>
 /// Request DTO for updating device parameters such as buzzer status and temperature unit.
 /// </summary>
-public class UpdateParameterRequest
+public class UpdateParameterRequest : IBizContent
 {
     /// <summary>
     /// The unique record identifier of the device configuration.

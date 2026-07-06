@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Command;
 
@@ -6,7 +7,7 @@ namespace FreshlianceGateway.Sdk.Models.Command;
 /// Request DTO for issuing a direct configuration command to a device,
 /// including sensor alarms, WiFi settings, probe info, and collection/upload intervals.
 /// </summary>
-public class DirectConfigRequest
+public class DirectConfigRequest : IBizContent
 {
     /// <summary>
     /// The issued device command containing the record identifier.

@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Group;
 
 /// <summary>
 /// Request model for retrieving a list of groups under a parent group.
 /// </summary>
-public class GetGroupListRequest
+public class GetGroupListRequest : IBizContent
 {
     /// <summary>
     /// The parent group identifier. Use 0 for root-level groups.

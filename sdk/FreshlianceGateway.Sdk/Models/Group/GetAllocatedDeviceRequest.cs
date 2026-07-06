@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Group;
 
 /// <summary>
 /// Request model for retrieving devices already allocated to a group.
 /// </summary>
-public class GetAllocatedDeviceRequest
+public class GetAllocatedDeviceRequest : IBizContent
 {
     /// <summary>
     /// The page number for pagination. Default is 1.
