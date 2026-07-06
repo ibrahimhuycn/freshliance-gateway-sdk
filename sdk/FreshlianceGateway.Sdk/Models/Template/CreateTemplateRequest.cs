@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Template;
 
@@ -6,7 +7,7 @@ namespace FreshlianceGateway.Sdk.Models.Template;
 /// Request DTO for creating a new device template with sensor configuration,
 /// alarm list, category, and product code.
 /// </summary>
-public class CreateTemplateRequest
+public class CreateTemplateRequest : IBizContent
 {
     /// <summary>
     /// The sensor configuration for the new template.

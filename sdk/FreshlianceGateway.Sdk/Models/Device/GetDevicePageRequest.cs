@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Device;
 
 /// <summary>
 /// Request parameters for paging through the user's device list with optional filters.
 /// </summary>
-public class GetDevicePageRequest
+public class GetDevicePageRequest : IBizContent
 {
     /// <summary>Page number, starting from 1.</summary>
     [JsonPropertyName("pageNum")] public int PageNum { get; set; } = 1;

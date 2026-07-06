@@ -40,11 +40,11 @@ public class FreshlianceClient
     /// </summary>
     /// <typeparam name="T">The expected response data type.</typeparam>
     /// <param name="method">The API method name.</param>
-    /// <param name="bizContent">The business content payload, or null.</param>
+    /// <param name="bizContent">The business content payload implementing <see cref="IBizContent"/>, or null.</param>
     /// <param name="ct">A cancellation token.</param>
     /// <returns>The deserialized API response.</returns>
     /// <exception cref="FreshlianceException">Thrown when the HTTP response is not successful or the body is empty.</exception>
-    public async Task<FreshlianceResponse<T>> PostAsync<T>(string method, object? bizContent,
+    public async Task<FreshlianceResponse<T>> PostAsync<T>(string method, IBizContent? bizContent,
         CancellationToken ct = default)
     {
         var parameters = BuildParameters(method, bizContent);

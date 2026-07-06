@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Command;
 
@@ -6,7 +7,7 @@ namespace FreshlianceGateway.Sdk.Models.Command;
 /// Request DTO for saving a complete data logger configuration including command settings,
 /// sensor alarms, WiFi notification settings, probe info, and collection/upload intervals.
 /// </summary>
-public class SaveDataConfigRequest
+public class SaveDataConfigRequest : IBizContent
 {
     /// <summary>
     /// The issued device command containing the record identifier.

@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Device;
 
 /// <summary>
 /// Request parameters for paging through the sub-devices of a specific parent device.
 /// </summary>
-public class GetSubDevicePageRequest
+public class GetSubDevicePageRequest : IBizContent
 {
     /// <summary>Identifier of the parent user-device association.</summary>
     [JsonPropertyName("userDeviceId")] public int UserDeviceId { get; set; }

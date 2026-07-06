@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Data;
 
 /// <summary>
 /// Request model for retrieving alarm data with optional filters.
 /// </summary>
-public class GetAlarmDataRequest
+public class GetAlarmDataRequest : IBizContent
 {
     /// <summary>
     /// The record identifier.

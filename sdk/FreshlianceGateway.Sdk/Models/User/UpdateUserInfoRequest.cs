@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.User;
 
@@ -6,7 +7,7 @@ namespace FreshlianceGateway.Sdk.Models.User;
 /// Request payload for updating the current user's profile settings.
 /// Only supplied fields will be updated.
 /// </summary>
-public class UpdateUserInfoRequest
+public class UpdateUserInfoRequest : IBizContent
 {
     /// <summary>User's time zone identifier (e.g., "America/New_York").</summary>
     [JsonPropertyName("timeZone")] public string? TimeZone { get; set; }

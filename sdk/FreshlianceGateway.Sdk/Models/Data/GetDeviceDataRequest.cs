@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using FreshlianceGateway.Sdk.Core;
 
 namespace FreshlianceGateway.Sdk.Models.Data;
 
 /// <summary>
 /// Request model for retrieving device data.
 /// </summary>
-public class GetDeviceDataRequest
+public class GetDeviceDataRequest : IBizContent
 {
     /// <summary>
     /// The record identifier.
