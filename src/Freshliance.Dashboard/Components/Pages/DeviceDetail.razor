@@ -1,0 +1,135 @@
+@page "/device/{RecordId:int}"
+@using ApexCharts
+@using FreshlianceGateway.Sdk.Models.Device
+
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="ma-4">@_error</MudAlert>
+}
+else if (_device is null)
+{
+    <EmptyState Icon="@Icons.Material.Filled.Devices" Message="Device not found." />
+}
+else
+{
+    <MudBreadcrumbs Items="BreadcrumbItems" Class="mb-4" data-testid="breadcrumb" />
+
+    <MudCard Elevation="0" Class="pa-4 mb-4" Style="border-left: 4px solid var(--mud-palette-primary)" data-testid="device-header">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="8">
+                <MudText Typo="Typo.h5" Style="word-break: break-word" data-testid="page-title">@_device.DeviceName</MudText>
+                <MudStack Row="true" Spacing="3" Class="mt-2">
+                    <MudText Typo="Typo.body2" Color="MudBlazor.Color.Secondary">SN: @_device.DeviceSn</MudText>
+                    <MudText Typo="Typo.body2" Color="MudBlazor.Color.Secondary">Model: @_device.ProductModel</MudText>
+                    <DeviceStatusChip Status="@_device.DeviceStatus" />
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                @if (_device.DevicePower.HasValue)
+                {
+                    <MudText Typo="Typo.caption" Color="MudBlazor.Color.Secondary">Battery</MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudProgressLinear Value="@_device.DevicePower.Value" Color="@BatteryColor" Class="flex-grow-1" Size="MudBlazor.Size.Small" data-testid="battery-bar" />
+                        <MudText Typo="Typo.caption">@($"{_device.DevicePower.Value}%")</MudText>
+                    </MudStack>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudCard>
+
+    <MudStack Spacing="2" Class="mb-4">
+        <TimeRangePicker SelectionChanged="OnTimeRangeChanged" />
+    </MudStack>
+
+    <MudCard Elevation="0" Class="mt-4">
+        <ProbeTabs Probes="ProbeEntries">
+            @if (_isProbeDataLoading)
+            {
+                <LoadingSkeleton />
+            }
+            else if (!_probeHasData.ContainsKey(context) || !_probeHasData[context])
+            {
+                <EmptyState Icon="@Icons.Material.Filled.ShowChart" Message="No data in selected time range." />
+            }
+            else if (!IsProbeConnected(context))
+            {
+                <MudAlert Severity="Severity.Warning" Class="ma-2 mb-4">Probe not connected.</MudAlert>
+                @if (_latestReadings.TryGetValue(context, out var lastRead) && lastRead is not null)
+                {
+                    <LastReadingCard Data="@lastRead" />
+                }
+            }
+            else
+            {
+                @if (_latestReadings.TryGetValue(context, out var lastReading) && lastReading is not null)
+                {
+                    <LastReadingCard Data="@lastReading" />
+                }
+                @if (_chartSeries.TryGetValue(context, out var series) && series.Count > 0)
+                {
+                    @foreach (var s in series)
+                    {
+                        <MudText Typo="Typo.caption" Color="MudBlazor.Color.Secondary">@s.Name</MudText>
+                        <div class="mb-4">
+                            <ApexChart TItem="ChartPoint" Options="@ApexOptsFor(s.Name)" Height="300">
+                                <ApexPointSeries TItem="ChartPoint"
+                                                 Items="s.Points"
+                                                 Name="@s.Name"
+                                                 SeriesType="SeriesType.Line"
+                                                 XValue="e => e.Time"
+                                                 YValue="e => e.Value" />
+                            </ApexChart>
+                        </div>
+                    }
+                }
+            }
+            <MudStack Row="true" Spacing="2" Class="px-4 pb-4" Justify="Justify.FlexEnd">
+                <MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small"
+                           StartIcon="@Icons.Material.Filled.FileDownload"
+                           OnClick="@(() => ExportCsv(context))"
+                           Disabled="@(!_probeHasData.ContainsKey(context) || !_probeHasData[context])"
+                           data-testid="export-csv">
+                    Export CSV
+                </MudButton>
+            </MudStack>
+        </ProbeTabs>
+    </MudCard>
+
+    <MudCard Elevation="0" Class="mt-4 pa-4" data-testid="probe-tab-alarms">
+        <MudText Typo="Typo.h6" Class="mb-4">Alarm History</MudText>
+        @if (_alarms.Count == 0)
+        {
+            <EmptyState Icon="@Icons.Material.Filled.NotificationsOff" Message="No alarm history." />
+        }
+        else
+        {
+            <MudTable Items="@_alarms" Hover="true" Striped="true" Elevation="0" data-testid="alarm-history-table">
+                <HeaderContent>
+                    <MudTh>Time</MudTh>
+                    <MudTh>Probe</MudTh>
+                    <MudTh>Property</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Threshold</MudTh>
+                    <MudTh>Value</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Time">@Preferences.FormatDateTime(context.AlarmTime)</MudTd>
+                    <MudTd DataLabel="Probe">@GetProbeLabel(context.ProbeType)</MudTd>
+                    <MudTd DataLabel="Property">@GetAlarmPropertyName(context.AlarmProperty)</MudTd>
+                    <MudTd DataLabel="Type">@GetAlarmTypeName(context.AlarmType)</MudTd>
+                    <MudTd DataLabel="Threshold">@context.AlarmThreshold</MudTd>
+                    <MudTd DataLabel="Value">@context.PropertyValue</MudTd>
+                    <MudTd DataLabel="Status">@GetHandleStatusName(context.HandleStatus)</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        }
+    </MudCard>
+}

@@ -1,0 +1,32 @@
+<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" data-testid="probe-tabs">
+    @foreach (var probe in _probes)
+    {
+        <MudTabPanel Text="@GetProbeLabel(probe.Key)" data-testid="@GetProbeTestId(probe.Key)">
+            @ChildContent(probe.Key)
+        </MudTabPanel>
+    }
+</MudTabs>
+
+@code {
+    [Parameter] public Dictionary<int, RenderFragment> Probes { get; set; } = [];
+    [Parameter] public RenderFragment<int> ChildContent { get; set; } = default!;
+
+    private IEnumerable<KeyValuePair<int, RenderFragment>> _probes =>
+        Probes.Where(p => p.Key >= 0 && p.Key <= 2).OrderBy(p => p.Key);
+
+    private static string GetProbeLabel(int probeType) => probeType switch
+    {
+        0 => "Built-in",
+        1 => "External 1",
+        2 => "External 2",
+        _ => $"Probe {probeType}"
+    };
+
+    private static string GetProbeTestId(int probeType) => probeType switch
+    {
+        0 => "probe-tab-builtin",
+        1 => "probe-tab-external1",
+        2 => "probe-tab-external2",
+        _ => $"probe-tab-{probeType}"
+    };
+}

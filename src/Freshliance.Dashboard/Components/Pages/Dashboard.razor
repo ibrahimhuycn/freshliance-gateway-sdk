@@ -1,0 +1,141 @@
+@page "/"
+
+<MudText Typo="Typo.h4" Class="mb-4" data-testid="page-title">Dashboard</MudText>
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" data-testid="dashboard-error">@_error</MudAlert>
+}
+
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (TotalDevices == 0)
+{
+    <EmptyState Icon="@Icons.Material.Filled.Devices"
+                Message="No devices found"
+                ActionText="Go to Devices"
+                OnAction="NavigateToDevices" />
+}
+else
+{
+    <div class="dashboard-header d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.body2" Color="Color.Secondary" data-testid="last-updated">
+            Last updated: @_lastUpdatedText
+        </MudText>
+        <MudSwitch @bind-Value="_autoRefresh" Color="Color.Primary" data-testid="auto-refresh-toggle">
+            Auto-refresh
+        </MudSwitch>
+    </div>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="dashboard-stat-card card-total" data-testid="card-total">
+                <MudCardContent>
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Devices" Size="Size.Large" Color="Color.Primary" Class="mr-3" />
+                        <div>
+                            <MudText Typo="Typo.h4" Class="mb-0">@TotalDevices</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Total Devices</MudText>
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="dashboard-stat-card card-online" data-testid="card-online">
+                <MudCardContent>
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Cloud" Size="Size.Large" Color="Color.Success" Class="mr-3" />
+                        <div>
+                            <MudText Typo="Typo.h4" Class="mb-0">@OnlineCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Online (@OnlinePercent%)</MudText>
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="dashboard-stat-card card-offline" data-testid="card-offline">
+                <MudCardContent>
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Color="Color.Error" Class="mr-3" />
+                        <div>
+                            <MudText Typo="Typo.h4" Class="mb-0">@OfflineCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Offline (@OfflinePercent%)</MudText>
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="dashboard-stat-card card-alarm" data-testid="card-alarm">
+                <MudCardContent>
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" Color="Color.Warning" Class="mr-3" />
+                        <div>
+                            <MudText Typo="Typo.h4" Class="mb-0">@AlarmCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">In Alarm (@AlarmPercent%)</MudText>
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Recent Alarms</MudText>
+                    <MudTable Items="@RecentAlarms" Hover="true" Dense="true" Elevation="0" data-testid="alarm-table">
+                        <HeaderContent>
+                            <MudTh>Device</MudTh>
+                            <MudTh>Property</MudTh>
+                            <MudTh>Zone</MudTh>
+                            <MudTh>Threshold</MudTh>
+                            <MudTh>Actual</MudTh>
+                            <MudTh>Time</MudTh>
+                            <MudTh>Status</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Device">@GetDeviceName(context.RecordId)</MudTd>
+                            <MudTd DataLabel="Property">@GetAlarmPropertyName(context.AlarmProperty)</MudTd>
+                            <MudTd DataLabel="Zone">
+                                <div class="d-flex align-center ga-2">
+                                    <span>@context.AlarmZone</span>
+                                    @{
+                                        var (typeColor, typeLabel) = GetAlarmTypeBadge(context.AlarmType);
+                                    }
+                                    <MudChip T="string" Size="Size.Small" Color="@typeColor" Variant="Variant.Filled">@typeLabel</MudChip>
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Threshold">@context.AlarmThreshold</MudTd>
+                            <MudTd DataLabel="Actual">@context.PropertyValue</MudTd>
+                            <MudTd DataLabel="Time">@context.AlarmTime</MudTd>
+                            <MudTd DataLabel="Status">
+                                @{
+                                    var (statusColor, statusLabel) = GetHandleStatusBadge(context.HandleStatus);
+                                }
+                                <MudChip T="string" Size="Size.Small" Color="@statusColor" Variant="Variant.Filled">@statusLabel</MudChip>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="h-100" data-testid="group-tree">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Device Groups</MudText>
+                    <MudTreeView T="GroupTreeItemData" Items="@_groupTreeItems" ReadOnly="true" Hover="true" Class="group-tree-view">
+                        <ItemTemplate>
+                            <MudTreeViewItem T="GroupTreeItemData" Value="@context.Value" Items="@context.Children" Text="@context.Text" />
+                        </ItemTemplate>
+                    </MudTreeView>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}

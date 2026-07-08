@@ -43,7 +43,7 @@ public class AllocatedDeviceResponse
     /// <summary>
     /// The UTC timestamp when the device was created.
     /// </summary>
-    [JsonPropertyName("createTime")] public string? CreateTime { get; set; }
+    [JsonPropertyName("createTime")] public long? CreateTime { get; set; }
     /// <summary>
     /// The number of sub-devices attached to this device.
     /// </summary>

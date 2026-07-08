@@ -96,6 +96,13 @@ Obtain the alarm data page of device record.
 
 `gw.deviceAlarmData.page`
 
+> **Note (verified 2026-07):** These docs are inconsistent — this heading says
+> `gw.deviceAlarmData.page` but the request example below uses `gw.deviceAlarm.page`.
+> Live testing against the gateway confirms **`gw.deviceAlarm.page`** is the correct
+> method (`code=0`, success); `gw.deviceAlarmData.page` returns `40000 Parameter error`.
+> The SDK (`DeviceDataService.GetAlarmPageAsync`) uses `gw.deviceAlarm.page`.
+> Reproduce with: `FreshlianceGateway.Samples.Cli --alarm-probe --app-id <id> --key-file <pem>`.
+
 **Request Parameter**
 
 | Name           | Type | Required | Description                                                   | Example         |

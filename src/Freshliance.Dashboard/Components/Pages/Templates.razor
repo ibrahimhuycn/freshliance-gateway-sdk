@@ -1,0 +1,121 @@
+<PageTitle>Configuration Templates</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4" data-testid="page-title">Configuration Templates</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+           OnClick="OpenCreateDialog" Class="mb-4" data-testid="btn-create-template">
+    Create Template
+</MudButton>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" data-testid="error-alert">@_error</MudAlert>
+}
+
+@if (_loading && _initialLoad)
+{
+    <LoadingSkeleton />
+}
+else if (!_loading && !_initialLoad && _currentItems.Count == 0 && _error is null)
+{
+    <EmptyState Icon="@Icons.Material.Filled.Description"
+                Message="No configuration templates found."
+                ActionText="Create Template"
+                OnAction="OpenCreateDialog" />
+}
+else
+{
+    <MudPaper Elevation="0" Class="pa-0">
+        <MudDataGrid T="TemplatePageItemResponse" @ref="_grid" ServerData="@LoadData" Hover="true"
+                     FixedHeader="true" Height="520px"
+                     data-testid="template-grid">
+            <ToolBarContent>
+                <MudText Typo="Typo.body2" Class="ml-auto">Total: @_totalItems templates</MudText>
+            </ToolBarContent>
+            <Columns>
+                <TemplateColumn Title="">
+                    <CellTemplate>
+                        @{
+                            var rowItem = (TemplatePageItemResponse)context.Item;
+                        }
+                        <MudIconButton Size="Size.Small"
+                                       Icon="@(_expandedItem?.ConfigId == rowItem.ConfigId ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                       OnClick="@(() => ToggleDetail(rowItem))"
+                                       title="Toggle alarm details" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.TemplateName" Title="Template Name" Sortable="false" />
+                <PropertyColumn Property="x => x.CategoryName" Title="Category" Sortable="false" />
+                <PropertyColumn Property="x => x.CollectInterval" Title="Collect Interval (min)" Sortable="false" />
+                <PropertyColumn Property="x => x.StartDelay" Title="Start Delay (min)" Sortable="false" />
+                <TemplateColumn Title="Alarm Points" Sortable="false">
+                    <CellTemplate>
+                        @GetAlarmCount((TemplatePageItemResponse)context.Item)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        @{
+                            var item = (TemplatePageItemResponse)context.Item;
+                            var idx = _currentItems.IndexOf(item);
+                        }
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit"
+                                       OnClick="@(() => OpenEditDialog(item))"
+                                       data-testid="@($"btn-edit-template-{idx}")"
+                                       title="Edit template" />
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       OnClick="@(() => DeleteTemplate(item))"
+                                       data-testid="@($"btn-delete-template-{idx}")"
+                                       title="Delete template" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="TemplatePageItemResponse" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+
+    @if (_expandedItem is not null)
+    {
+        <MudPaper Elevation="0" Class="pa-4 mt-4" data-testid="alarm-detail-panel">
+            <MudText Typo="Typo.h6" Class="mb-2">
+                Alarm Configuration — @_expandedItem.TemplateName
+            </MudText>
+            @{
+                var alarms = GetFlatAlarms(_expandedItem);
+            }
+            @if (alarms.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No alarm configurations.</MudText>
+            }
+            else
+            {
+                <MudTable Items="alarms" Hover="true" Dense="true" Elevation="0"
+                          data-testid="alarm-detail-table">
+                    <HeaderContent>
+                        <MudTh>Probe</MudTh>
+                        <MudTh>Zone</MudTh>
+                        <MudTh>Property</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Threshold</MudTh>
+                        <MudTh>Delay (min)</MudTh>
+                        <MudTh>Way</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Probe">@context.ProbeLabel</MudTd>
+                        <MudTd DataLabel="Zone">@context.Alarm.AlarmZone</MudTd>
+                        <MudTd DataLabel="Property">@GetAlarmPropertyLabel(context.Alarm.AlarmProperty)</MudTd>
+                        <MudTd DataLabel="Type">@GetAlarmTypeLabel(context.Alarm.AlarmType)</MudTd>
+                        <MudTd DataLabel="Threshold">
+                            @context.Alarm.AlarmThreshold?.ToString("F1") @GetAlarmUnit(context.Alarm.AlarmProperty)
+                        </MudTd>
+                        <MudTd DataLabel="Delay">@context.Alarm.AlarmDelay</MudTd>
+                        <MudTd DataLabel="Way">@GetAlarmWayLabel(context.Alarm.AlarmWay)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    }
+}

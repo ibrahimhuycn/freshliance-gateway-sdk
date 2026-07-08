@@ -1,0 +1,120 @@
+@page "/settings"
+@using System.Globalization
+
+<PageTitle>Settings</PageTitle>
+
+<h1 class="text-h4 mb-4" data-testid="page-title">Settings</h1>
+
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" data-testid="alert-load-error">
+        @_error
+    </MudAlert>
+}
+else if (_userInfo is not null)
+{
+    <MudCard Elevation="2">
+        <MudCardContent>
+            <MudForm>
+                <MudGrid Spacing="4">
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_email"
+                                      Label="Email"
+                                      Variant="Variant.Outlined"
+                                      ReadOnly="true"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Email"
+                                      data-testid="input-email" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_nickname"
+                                      Label="Nickname"
+                                      Variant="Variant.Outlined"
+                                      MaxLength="30"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Person"
+                                      data-testid="input-nickname" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Timezone"
+                                   Variant="Variant.Outlined"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   ToStringFunc="@(tz => _timezoneDisplayMap.GetValueOrDefault(tz, tz))"
+                                   @bind-Value="_timezone"
+                                   data-testid="select-timezone">
+                            @foreach (var tz in _timezones)
+                            {
+                                <MudSelectItem Value="tz">@tz</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Language"
+                                   Variant="Variant.Outlined"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   @bind-Value="_language"
+                                   data-testid="select-language">
+                            <MudSelectItem Value="1">English</MudSelectItem>
+                            <MudSelectItem Value="2">Chinese</MudSelectItem>
+                            <MudSelectItem Value="3">French</MudSelectItem>
+                            <MudSelectItem Value="4">German</MudSelectItem>
+                            <MudSelectItem Value="5">Russian</MudSelectItem>
+                            <MudSelectItem Value="6">Spanish</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Date Format"
+                                   Variant="Variant.Outlined"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   @bind-Value="_dateFormat"
+                                   data-testid="select-date-format">
+                            <MudSelectItem Value="1">YYYY/MM/DD</MudSelectItem>
+                            <MudSelectItem Value="2">DD/MM/YYYY</MudSelectItem>
+                            <MudSelectItem Value="3">MM/DD/YYYY</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Temperature Unit"
+                                   Variant="Variant.Outlined"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   @bind-Value="_temperatureUnit"
+                                   data-testid="select-temp-unit">
+                            <MudSelectItem Value="1">Celsius</MudSelectItem>
+                            <MudSelectItem Value="2">Fahrenheit</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudAlert Severity="Severity.Info"
+                          Variant="Variant.Filled"
+                          Class="mt-4"
+                          data-testid="alert-sms-balance">
+                    China SMS: @_userInfo.ChnSmsNum &nbsp;|&nbsp; International SMS: @_userInfo.IntSmsNum
+                </MudAlert>
+
+                <MudStack Row="true" Class="mt-4">
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="SaveAsync"
+                               Disabled="_isSaving"
+                               data-testid="btn-save-settings">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Class="mr-2" Indeterminate="true" />
+                        }
+                        Save
+                    </MudButton>
+                </MudStack>
+            </MudForm>
+        </MudCardContent>
+    </MudCard>
+}

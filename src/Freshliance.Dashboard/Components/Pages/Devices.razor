@@ -1,0 +1,157 @@
+@page "/devices"
+
+<MudText Typo="Typo.h4" Class="mb-4" data-testid="page-title">Devices</MudText>
+
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (_totalItems == 0)
+{
+    <EmptyState Icon="@Icons.Material.Filled.Devices" Message="No devices found" ActionText="Refresh" OnAction="@ReloadAsync" />
+}
+else
+{
+    <MudDataGrid T="DevicePageItemResponse"
+                 ServerData="@LoadGridData"
+                 @ref="_grid"
+                 Dense="true"
+                 Hover="true"
+                 Elevation="0"
+                 RowsPerPage="20"
+                 RowClick="OnRowClick">
+        <ToolBarContent>
+            <MudStack Row Wrap="Wrap.Wrap" Justify="Justify.SpaceBetween" Class="pa-2">
+                <MudStack Row Spacing="2" Wrap="Wrap.Wrap">
+                    <MudTextField T="string"
+                                  Value="_keyword"
+                                  ValueChanged="OnKeywordChangedAsync"
+                                  Label="Search"
+                                  Placeholder="Device name or SN..."
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Immediate="true"
+                                  Style="min-width:200px; max-width:260px;"
+                                  data-testid="search-devices" />
+                    <MudSelect T="int?"
+                               Value="_status"
+                               ValueChanged="OnStatusChangedAsync"
+                               Label="Status"
+                               Dense="true"
+                               Style="min-width:130px;"
+                               data-testid="filter-status">
+                        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+                        <MudSelectItem Value="@((int)DeviceStatus.Online)">Online</MudSelectItem>
+                        <MudSelectItem Value="@((int)DeviceStatus.Offline)">Offline</MudSelectItem>
+                        <MudSelectItem Value="@((int)DeviceStatus.Abnormal)">Abnormal</MudSelectItem>
+                        <MudSelectItem Value="@((int)DeviceStatus.Inactive)">Inactive</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="int?"
+                               Value="_productType"
+                               ValueChanged="OnProductTypeChangedAsync"
+                               Label="Product Type"
+                               Dense="true"
+                               Style="min-width:140px;"
+                               data-testid="filter-product-type">
+                        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+                        <MudSelectItem Value="@((int)ProductType.Gateway)">Gateway</MudSelectItem>
+                        <MudSelectItem Value="@((int)ProductType.Sensor)">Sensor</MudSelectItem>
+                        <MudSelectItem Value="@((int)ProductType.Coeus)">COEUS</MudSelectItem>
+                        <MudSelectItem Value="@((int)ProductType.Gsp)">GSP</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="int?"
+                               Value="_alarmStatus"
+                               ValueChanged="OnAlarmStatusChangedAsync"
+                               Label="Alarm"
+                               Dense="true"
+                               Style="min-width:120px;"
+                               data-testid="filter-alarm-status">
+                        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+                        <MudSelectItem Value="1">Normal</MudSelectItem>
+                        <MudSelectItem Value="2">In Alarm</MudSelectItem>
+                    </MudSelect>
+                </MudStack>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="ReloadAsync"
+                           data-testid="btn-refresh-devices">
+                    Refresh
+                </MudButton>
+            </MudStack>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn T="DevicePageItemResponse" Title="Device Name">
+                <CellTemplate>
+                    <a Style="color: var(--mud-palette-primary); text-decoration: none; cursor: pointer; font-weight: 500;"
+                       @onclick="@((MouseEventArgs _) => NavigateToDevice(context.Item))"
+                       @onclick:preventDefault
+                       @onclick:stopPropagation="true"
+                       data-testid="@($"device-link-{context.Item.DeviceInfo.DeviceSn}")">
+                        @context.Item.DeviceInfo.DeviceName
+                    </a>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="DevicePageItemResponse" Title="Serial No.">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">@context.Item.DeviceInfo.DeviceSn</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="DevicePageItemResponse" Title="Status">
+                <CellTemplate>
+                    <DeviceStatusChip Status="@context.Item.DeviceInfo.DeviceStatus" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="DevicePageItemResponse" Title="Alarm">
+                <CellTemplate>
+                    @if (context.Item.DeviceInfo.AlarmStatus == 2)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">In Alarm</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">Normal</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="DevicePageItemResponse" Title="Battery">
+                <CellTemplate>
+                    @if (context.Item.DeviceInfo.DevicePower is { } power)
+                    {
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudProgressLinear Value="@power" Color="@BatteryColor(power)" Class="flex-grow-1" Size="Size.Small" />
+                            <MudText Typo="Typo.caption">@($"{power}%")</MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">-</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="DevicePageItemResponse" Title="Model">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">@context.Item.DeviceInfo.ProductModel</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="DevicePageItemResponse" Title="Last Reading">
+                <CellTemplate>
+                    @{
+                        var subData = context.Item.SubDeviceLastDataList.FirstOrDefault();
+                    }
+                    @if (subData is not null)
+                    {
+                        <LastReadingCard Data="@subData" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">-</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="DevicePageItemResponse" data-testid="pagination-info" />
+        </PagerContent>
+    </MudDataGrid>
+}

@@ -1,0 +1,84 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add Devices</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudDataGrid T="UnallocatedDeviceResponse"
+                     ServerData="@LoadUnallocatedDevices"
+                     MultiSelection="true"
+                     @bind-SelectedItems="_selectedDevices"
+                     @ref="_grid"
+                     Hover="true"
+                     Striped="true"
+                     data-testid="unallocated-devices-grid">
+            <Columns>
+                <SelectColumn />
+                <PropertyColumn Property="x => x.DeviceName" Title="Device Name" />
+                <PropertyColumn Property="x => x.DeviceSn" Title="SN" />
+                <PropertyColumn Property="x => x.ProductModel" Title="Model" />
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="UnallocatedDeviceResponse" />
+            </PagerContent>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel" data-testid="btn-cancel-dialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Bind"
+                   Disabled="@(_selectedDevices.Count == 0)"
+                   data-testid="btn-bind-dialog">
+            Bind
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public int GroupId { get; set; }
+
+    [Inject] private IGroupDeviceService GroupDeviceService { get; set; } = null!;
+
+    private MudDataGrid<UnallocatedDeviceResponse> _grid = null!;
+    private HashSet<UnallocatedDeviceResponse> _selectedDevices = [];
+
+    private async Task<GridData<UnallocatedDeviceResponse>> LoadUnallocatedDevices(GridState<UnallocatedDeviceResponse> state, CancellationToken ct)
+    {
+        try
+        {
+            var request = new GetUnallocatedDeviceRequest
+            {
+                PageNum = state.Page + 1,
+                PageSize = state.PageSize,
+                GroupId = GroupId
+            };
+            var response = await GroupDeviceService.GetUnallocatedPageAsync(request);
+            response.EnsureSuccess();
+            return new GridData<UnallocatedDeviceResponse>
+            {
+                Items = response.Data?.Rows ?? [],
+                TotalItems = response.Data?.Total ?? 0
+            };
+        }
+        catch
+        {
+            return new GridData<UnallocatedDeviceResponse> { Items = [], TotalItems = 0 };
+        }
+    }
+
+    private async Task Bind()
+    {
+        if (_selectedDevices.Count == 0) return;
+
+        var request = new BindDeviceRequest
+        {
+            UserDeviceIds = _selectedDevices.Select(d => d.UserDeviceId).ToArray(),
+            GroupId = GroupId
+        };
+        MudDialog.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

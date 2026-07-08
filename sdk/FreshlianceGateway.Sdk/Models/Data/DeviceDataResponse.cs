@@ -26,7 +26,7 @@ public class DeviceDataResponse
     /// <summary>
     /// The UTC timestamp of the data reading.
     /// </summary>
-    [JsonPropertyName("dataTime")] public string DataTime { get; set; } = "";
+    [JsonPropertyName("dataTime")] public long DataTime { get; set; }
     /// <summary>
     /// The probe type indicator (e.g., temperature, humidity).
     /// </summary>

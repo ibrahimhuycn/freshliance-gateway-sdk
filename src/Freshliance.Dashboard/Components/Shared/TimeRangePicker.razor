@@ -1,0 +1,59 @@
+<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" data-testid="time-presets">
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OnRangeSelected(1))" data-testid="time-preset-1h">
+        1h
+    </MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OnRangeSelected(6))" data-testid="time-preset-6h">
+        6h
+    </MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OnRangeSelected(24))" data-testid="time-preset-24h">
+        24h
+    </MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OnRangeSelected(168))" data-testid="time-preset-7d">
+        7d
+    </MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OnRangeSelected(720))" data-testid="time-preset-30d">
+        30d
+    </MudButton>
+    <span Style="max-width:240px;">
+        <MudDateRangePicker @bind-DateRange="_dateRange" Label="Custom range" Margin="Margin.Dense" data-testid="date-range-picker" />
+    </span>
+    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyCustomAsync">
+        Apply
+    </MudButton>
+</MudStack>
+
+@code {
+    [Parameter] public EventCallback<long[]> SelectionChanged { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+
+    private DateRange? _dateRange;
+
+    private async Task OnRangeSelected(int hours)
+    {
+        var end = DateTimeOffset.Now;
+        var start = end.AddHours(-hours);
+        await SelectionChanged.InvokeAsync([start.ToUnixTimeMilliseconds(), end.ToUnixTimeMilliseconds()]);
+    }
+
+    private async Task ApplyCustomAsync()
+    {
+        if (_dateRange?.Start is null || _dateRange.End is null) return;
+
+        var offset = DateTimeOffset.Now.Offset;
+        var start = new DateTimeOffset(_dateRange.Start.Value, offset);
+        var end = new DateTimeOffset(_dateRange.End.Value, offset);
+
+        if (end <= start)
+        {
+            Snackbar.Add("End must be after start", Severity.Warning);
+            return;
+        }
+        if ((end - start).TotalDays > 31)
+        {
+            Snackbar.Add("Range cannot exceed 31 days", Severity.Warning);
+            return;
+        }
+
+        await SelectionChanged.InvokeAsync([start.ToUnixTimeMilliseconds(), end.ToUnixTimeMilliseconds()]);
+    }
+}

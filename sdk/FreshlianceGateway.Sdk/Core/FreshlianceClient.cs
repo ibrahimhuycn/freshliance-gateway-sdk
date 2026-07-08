@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
@@ -19,6 +20,7 @@ public class FreshlianceClient
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Converters = { new BizContentJsonConverter() }
     };
 
