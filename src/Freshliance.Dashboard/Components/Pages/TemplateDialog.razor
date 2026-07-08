@@ -1,0 +1,233 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_isEdit ? "Edit" : "Create") Template</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Validation="@(_validationFunc)">
+            <MudGrid Spacing="3">
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_templateName" Label="Template Name" Required="true"
+                                  RequiredError="Template name is required."
+                                  For="@(() => _templateName)"
+                                  data-testid="input-template-name" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="_categoryId" Label="Category" Required="true"
+                               RequiredError="Category is required."
+                               For="@(() => _categoryId)"
+                               data-testid="select-category">
+                        @foreach (var cat in Categories)
+                        {
+                            <MudSelectItem Value="cat.CategoryId">@cat.CategoryName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="_collectInterval" Label="Collect Interval (minutes)"
+                                     Required="true" Min="1"
+                                     RequiredError="Collect interval must be at least 1 minute."
+                                     For="@(() => _collectInterval)"
+                                     data-testid="input-collect-interval" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="_startDelay" Label="Start Delay (minutes)"
+                                     data-testid="input-start-delay" />
+                </MudItem>
+            </MudGrid>
+
+            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-2">Alarm Configurations</MudText>
+
+            <MudTable Items="_alarmRows" Hover="true" Dense="true" Elevation="0"
+                      data-testid="alarm-config-table">
+                <HeaderContent>
+                    <MudTh>Probe Type</MudTh>
+                    <MudTh>Zone</MudTh>
+                    <MudTh>Property</MudTh>
+                    <MudTh>Alarm Type</MudTh>
+                    <MudTh>Threshold</MudTh>
+                    <MudTh>Delay (min)</MudTh>
+                    <MudTh>Way</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Probe Type">
+                        <MudSelect @bind-Value="context.ProbeType" Dense="true" Margin="Margin.Dense">
+                            <MudSelectItem Value="0">Built-in</MudSelectItem>
+                            <MudSelectItem Value="1">External 1</MudSelectItem>
+                            <MudSelectItem Value="2">External 2</MudSelectItem>
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Zone">
+                        <MudSelect T="string" @bind-Value="context.AlarmZone" Dense="true" Margin="Margin.Dense">
+                            <MudSelectItem Value="@("H")">High (H)</MudSelectItem>
+                            <MudSelectItem Value="@("L")">Low (L)</MudSelectItem>
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Property">
+                        <MudSelect @bind-Value="context.AlarmProperty" Dense="true" Margin="Margin.Dense">
+                            <MudSelectItem Value="1">Temperature</MudSelectItem>
+                            <MudSelectItem Value="2">Humidity</MudSelectItem>
+                            <MudSelectItem Value="3">Illumination</MudSelectItem>
+                            <MudSelectItem Value="4">CO₂</MudSelectItem>
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Alarm Type">
+                        <MudSelect @bind-Value="context.AlarmType" Dense="true" Margin="Margin.Dense">
+                            <MudSelectItem Value="1">Low</MudSelectItem>
+                            <MudSelectItem Value="2">High</MudSelectItem>
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Threshold">
+                        <MudNumericField @bind-Value="context.AlarmThreshold" Margin="Margin.Dense" />
+                    </MudTd>
+                    <MudTd DataLabel="Delay">
+                        <MudNumericField @bind-Value="context.AlarmDelay" Margin="Margin.Dense" />
+                    </MudTd>
+                    <MudTd DataLabel="Way">
+                        <MudSelect @bind-Value="context.AlarmWay" Dense="true" Margin="Margin.Dense">
+                            <MudSelectItem Value="1">Single</MudSelectItem>
+                            <MudSelectItem Value="2">Cumulative</MudSelectItem>
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="">
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.RemoveCircleOutline"
+                                       Color="Color.Error"
+                                       OnClick="@((e) => RemoveAlarmRow(context))"
+                                       title="Remove alarm row" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="AddAlarmRow" Class="mt-2"
+                       data-testid="btn-add-alarm-row">
+                Add Alarm Row
+            </MudButton>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel" data-testid="btn-cancel-dialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" data-testid="btn-submit-dialog">
+            @(_isEdit ? "Save" : "Create")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public List<CategoryResponse> Categories { get; set; } = [];
+    [Parameter] public TemplateDetailResponse? ExistingDetail { get; set; }
+    [Parameter] public int? ConfigId { get; set; }
+
+    private MudForm _form = null!;
+    private readonly Func<object, string, IEnumerable<string>> _validationFunc = (_, _) => [];
+
+    private string _templateName = "";
+    private int? _categoryId;
+    private int? _collectInterval = 10;
+    private int? _startDelay;
+    private List<AlarmConfigRow> _alarmRows = [];
+    private bool _isEdit;
+
+    protected override void OnParametersSet()
+    {
+        if (_isEdit || ExistingDetail is null) return;
+
+        _isEdit = ExistingDetail is not null;
+        if (_isEdit)
+        {
+            _templateName = ExistingDetail!.SensorConfig.TemplateName;
+            _categoryId = ExistingDetail.SensorConfig.CategoryId ?? ExistingDetail.CategoryId;
+            _collectInterval = ExistingDetail.SensorConfig.CollectInterval;
+            _startDelay = ExistingDetail.SensorConfig.StartDelay;
+            _alarmRows = [];
+            if (ExistingDetail.SensorAlarmList is not null)
+            {
+                foreach (var alarm in ExistingDetail.SensorAlarmList)
+                {
+                    _alarmRows.Add(new AlarmConfigRow
+                    {
+                        ProbeType = alarm.ProbeType,
+                        AlarmZone = string.IsNullOrEmpty(alarm.AlarmZone) ? "H" : alarm.AlarmZone,
+                        AlarmProperty = alarm.AlarmProperty,
+                        AlarmType = alarm.AlarmType,
+                        AlarmThreshold = alarm.AlarmThreshold,
+                        AlarmDelay = alarm.AlarmDelay,
+                        AlarmWay = alarm.AlarmWay
+                    });
+                }
+            }
+        }
+    }
+
+    private void AddAlarmRow()
+    {
+        _alarmRows.Add(new AlarmConfigRow { AlarmZone = "H" });
+    }
+
+    private void RemoveAlarmRow(AlarmConfigRow row)
+    {
+        _alarmRows.Remove(row);
+    }
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+
+        if (_isEdit && ConfigId.HasValue)
+        {
+            var request = new UpdateTemplateRequest
+            {
+                ConfigId = ConfigId.Value,
+                SensorConfig = new UpdateTemplateSensorConfig
+                {
+                    ConfigId = ConfigId.Value,
+                    TemplateName = _templateName,
+                    CollectInterval = _collectInterval ?? 10,
+                    StartDelay = _startDelay
+                },
+                SensorAlarmList = _alarmRows.Select(r => new TemplateAlarmRequest
+                {
+                    ProbeType = r.ProbeType,
+                    AlarmZone = r.AlarmZone,
+                    AlarmProperty = r.AlarmProperty,
+                    AlarmType = r.AlarmType,
+                    AlarmThreshold = r.AlarmThreshold,
+                    AlarmDelay = r.AlarmDelay,
+                    AlarmWay = r.AlarmWay
+                }).ToList()
+            };
+            MudDialog.Close(DialogResult.Ok<object>(request));
+        }
+        else
+        {
+            var request = new CreateTemplateRequest
+            {
+                CategoryId = _categoryId ?? 0,
+                SensorConfig = new CreateTemplateSensorConfig
+                {
+                    TemplateName = _templateName,
+                    CategoryId = _categoryId,
+                    CollectInterval = _collectInterval ?? 10,
+                    StartDelay = _startDelay
+                },
+                SensorAlarmList = _alarmRows.Select(r => new TemplateAlarmRequest
+                {
+                    ProbeType = r.ProbeType,
+                    AlarmZone = r.AlarmZone,
+                    AlarmProperty = r.AlarmProperty,
+                    AlarmType = r.AlarmType,
+                    AlarmThreshold = r.AlarmThreshold,
+                    AlarmDelay = r.AlarmDelay,
+                    AlarmWay = r.AlarmWay
+                }).ToList()
+            };
+            MudDialog.Close(DialogResult.Ok<object>(request));
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

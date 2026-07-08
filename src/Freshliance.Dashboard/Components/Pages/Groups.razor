@@ -1,0 +1,161 @@
+@page "/groups"
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4" data-testid="page-title">Device Groups</MudText>
+
+    @if (_errorMessage is not null)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" CloseIconClicked="@(() => _errorMessage = null)">
+            @_errorMessage
+        </MudAlert>
+    }
+
+    <div Style="display:flex; gap:0; height:calc(100vh - 160px); border:1px solid var(--mud-palette-lines-default); border-radius:var(--mud-default-borderradius); overflow:hidden;">
+        <div Style="width:280px; min-width:280px; border-right:1px solid var(--mud-palette-lines-default); padding:16px; overflow-y:auto; background-color:var(--mud-palette-background-grey);">
+            @if (_isLoading)
+            {
+                <LoadingSkeleton />
+            }
+            else if (_treeItems is null or [])
+            {
+                <EmptyState Icon="@Icons.Material.Filled.FolderOff"
+                            Message="No groups found"
+                            ActionText="Create Group"
+                            OnAction="OpenAddGroupDialog" />
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenAddGroupDialog"
+                           data-testid="btn-add-group"
+                           Class="mb-3"
+                           FullWidth="true">
+                    Add Group
+                </MudButton>
+
+                <MudTreeView T="GroupTreeNodeResponse"
+                             Items="_treeItems"
+                             Hover="true"
+                             SelectedValueChanged="OnTreeItemSelected"
+                             data-testid="tree-group">
+                    <ItemTemplate>
+                        @{
+                            var itemData = context;
+                            var itemValue = context.Value;
+                            var deviceCount = itemValue?.DeviceGroupCount?.DeviceCount ?? 0;
+                        }
+                        <MudTreeViewItem @bind-Expanded="@itemData.Expanded"
+                                         Items="@itemData.Children"
+                                         Value="@itemData.Value"
+                                         Text="@itemData.Text"
+                                         Icon="@Icons.Material.Filled.Folder">
+                             <Content>
+                                 <MudStack Row AlignItems="AlignItems.Center" Style="width:100%; padding:2px 0;">
+                                     <MudText Typo="Typo.body2">@itemData.Text</MudText>
+                                     @if (deviceCount > 0)
+                                     {
+                                         <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">@deviceCount</MudChip>
+                                     }
+                                     <MudSpacer />
+                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                              Size="Size.Small"
+                                              Dense="true"
+                                              AnchorOrigin="Origin.BottomRight"
+                                              TransformOrigin="Origin.TopRight"
+                                              Style="flex-shrink:0;">
+                                        <MudMenuItem OnClick="@(() => OnRenameContext(itemValue!))">Rename</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => OnDeleteContext(itemValue!))"
+                                                     Disabled="@(deviceCount > 0)">
+                                            Delete
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </MudStack>
+                            </Content>
+                        </MudTreeViewItem>
+                    </ItemTemplate>
+                </MudTreeView>
+            }
+        </div>
+
+        <div Style="flex:1; padding:16px; overflow-y:auto; min-width:0;">
+            @if (_selectedNode is null)
+            {
+                <EmptyState Icon="@Icons.Material.Filled.FolderOpen"
+                            Message="Select a group to view its devices" />
+            }
+            else
+            {
+                <MudStack Row Class="pb-3" Style="border-bottom:1px solid var(--mud-palette-lines-default); margin-bottom:4px;" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                        <MudText Typo="Typo.h6">@_selectedNode.GroupName</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_totalAllocated devices</MudChip>
+                    </MudStack>
+                    <MudStack Row Spacing="1">
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Edit"
+                                   OnClick="@(() => OpenRenameDialog())"
+                                   data-testid="btn-rename-group"
+                                   Size="Size.Small">
+                            Rename
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   OnClick="@(() => DeleteGroup())"
+                                   Disabled="@((_selectedNode.DeviceGroupCount?.DeviceCount ?? 0) > 0)"
+                                   data-testid="btn-delete-group"
+                                   Size="Size.Small"
+                                   Color="Color.Error">
+                            Delete
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   StartIcon="@Icons.Material.Filled.AddLink"
+                                   OnClick="OpenAddDevicesDialog"
+                                   data-testid="btn-add-devices"
+                                   Size="Size.Small">
+                            Add Devices
+                        </MudButton>
+                    </MudStack>
+                </MudStack>
+
+                <MudDataGrid T="AllocatedDeviceResponse"
+                             ServerData="@LoadAllocatedDevices"
+                             @ref="_grid"
+                             Hover="true"
+                             Striped="true"
+                             data-testid="allocated-devices-grid"
+                             Class="mt-4">
+                    <Columns>
+                        <TemplateColumn T="AllocatedDeviceResponse" Title="Device Name">
+                            <CellTemplate>@context.Item.DeviceName</CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn T="AllocatedDeviceResponse" Title="SN">
+                            <CellTemplate>@context.Item.DeviceSn</CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn T="AllocatedDeviceResponse" Title="Status">
+                            <CellTemplate>
+                                <DeviceStatusChip Status="@context.Item.DeviceStatus" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn T="AllocatedDeviceResponse" Title="Model">
+                            <CellTemplate>@context.Item.ProductModel</CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn T="AllocatedDeviceResponse">
+                            <CellTemplate>
+                                <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="@(() => RemoveDevice(context.Item))"
+                                               data-testid="btn-remove-device" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="AllocatedDeviceResponse" />
+                    </PagerContent>
+                </MudDataGrid>
+            }
+        </div>
+    </div>
+</MudStack>

@@ -1,0 +1,70 @@
+<MudCard Elevation="0" Class="pa-3" data-testid="last-reading-card">
+    <MudGrid Spacing="2">
+        <MudItem xs="4">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Temperature</MudText>
+            <MudText Typo="Typo.h6" Class="mt-1 reading-value" data-testid="reading-temp">
+                <MudIcon Icon="@Icons.Material.Filled.Thermostat" Size="Size.Small" Class="mr-1" />
+                @FormatTemp(Data?.Temperature)
+            </MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Humidity</MudText>
+            <MudText Typo="Typo.h6" Class="mt-1 reading-value" data-testid="reading-humidity">
+                <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-1" />
+                @FormatHumidity(Data?.Humidity)
+            </MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Last Reading</MudText>
+            <MudText Typo="Typo.caption" Class="mt-1">
+                @FormatTime(Data?.DataTime)
+            </MudText>
+        </MudItem>
+    </MudGrid>
+    @if (Data is not null && (Data.Light.HasValue || Data.Co2.HasValue))
+    {
+        <MudDivider Class="my-2" />
+        <MudGrid Spacing="2">
+            @if (Data.Light.HasValue)
+            {
+                <MudItem xs="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudIcon Icon="@Icons.Material.Filled.LightMode" Size="Size.Small" Class="mr-1" /> Light
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mt-1" data-testid="reading-light">
+                        @Data.Light.Value:F0 lux
+                    </MudText>
+                </MudItem>
+            }
+            @if (Data.Co2.HasValue)
+            {
+                <MudItem xs="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudIcon Icon="@Icons.Material.Filled.Co2" Size="Size.Small" Class="mr-1" /> CO₂
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mt-1" data-testid="reading-co2">
+                        @Data.Co2.Value:F0 ppm
+                    </MudText>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudCard>
+
+@code {
+    [Parameter] public SubDeviceDataResponse? Data { get; set; }
+
+    [Inject] private UserPreferenceService Preferences { get; set; } = null!;
+
+    private string FormatTemp(double? value) => Preferences.FormatTemperature(value);
+
+    private string FormatHumidity(double? value) =>
+        value.HasValue ? $"{value.Value:F1}%" : "—";
+
+    private string FormatTime(long? epochMs)
+    {
+        if (!epochMs.HasValue)
+            return "—";
+        return Preferences.FormatDateTime(epochMs.Value);
+    }
+}

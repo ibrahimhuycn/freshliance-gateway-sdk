@@ -11,11 +11,15 @@ public class GetAlarmDataRequest : IBizContent
     /// <summary>
     /// The record identifier.
     /// </summary>
-    [JsonPropertyName("recordId")] public int RecordId { get; set; }
+    [JsonPropertyName("recordId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? RecordId { get; set; }
     /// <summary>
     /// The alarm property (e.g., temperature threshold, humidity threshold).
     /// </summary>
-    [JsonPropertyName("alarmProperty")] public int AlarmProperty { get; set; }
+    [JsonPropertyName("alarmProperty")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AlarmProperty { get; set; }
     /// <summary>
     /// Optional probe type filter.
     /// </summary>
@@ -24,6 +28,10 @@ public class GetAlarmDataRequest : IBizContent
     /// Optional alarm type filter.
     /// </summary>
     [JsonPropertyName("alarmType")] public int? AlarmType { get; set; }
+    /// <summary>
+    /// Optional handle status filter.
+    /// </summary>
+    [JsonPropertyName("handleStatus")] public int? HandleStatus { get; set; }
     /// <summary>
     /// Optional start time filter for the alarm range (Unix timestamp).
     /// </summary>

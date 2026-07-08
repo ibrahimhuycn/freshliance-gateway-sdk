@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using FreshlianceGateway.Sdk;
+using FreshlianceGateway.Sdk.Models.Group;
 using FreshlianceGateway.Sdk.Models.User;
 using FreshlianceGateway.Sdk.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         bool mock = false;
+        bool groupSpaceTest = false;
         string? appId = null;
         string? keyFile = null;
 
@@ -20,6 +22,9 @@ internal static class Program
             {
                 case "--mock":
                     mock = true;
+                    break;
+                case "--group-space-test":
+                    groupSpaceTest = true;
                     break;
                 case "--app-id":
                     if (i + 1 < args.Length) appId = args[++i];
@@ -46,7 +51,10 @@ internal static class Program
 
         if (appId is not null && keyFile is not null)
         {
-            await RunRealDemoAsync(appId, keyFile);
+            if (groupSpaceTest)
+                await RunGroupSpaceTestAsync(appId, keyFile);
+            else
+                await RunRealDemoAsync(appId, keyFile);
             return 0;
         }
 
@@ -62,6 +70,7 @@ internal static class Program
         Console.WriteLine("  --mock              Run in mock mode (demonstrates API surface)");
         Console.WriteLine("  --app-id <id>       Freshliance application ID");
         Console.WriteLine("  --key-file <path>   Path to RSA private key PEM file");
+        Console.WriteLine("  --group-space-test  Create a group with spaces and read it back (real API)");
         Console.WriteLine("  --help, -h          Show this help");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -341,6 +350,91 @@ internal static class Program
         Console.WriteLine("    -> bizContent: {configId:5}");
         Console.WriteLine("    -> FreshlianceResponse<bool>");
         Console.WriteLine();
+    }
+
+    private sealed class LoggingHandler : DelegatingHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (request.Content is not null)
+            {
+                var body = await request.Content.ReadAsStringAsync(ct);
+                Console.WriteLine("  >> OUTGOING BODY: " + body);
+            }
+            return await base.SendAsync(request, ct);
+        }
+    }
+
+    private static async Task RunGroupSpaceTestAsync(string appId, string keyFile)
+    {
+        var key = await File.ReadAllTextAsync(keyFile);
+
+        var services = new ServiceCollection();
+        services.AddFreshlianceGateway(options =>
+        {
+            options.AppId = appId;
+            options.PrivateKeyPem = key;
+        }).AddHttpMessageHandler(() => new LoggingHandler());
+
+        var provider = services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        var groupService = scope.ServiceProvider.GetRequiredService<IGroupService>();
+
+        var name = $"CLI Space Test {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+        Console.WriteLine("=====================================");
+        Console.WriteLine("[GROUP SPACE TEST]");
+        Console.WriteLine($"  Sending groupName = [{name}]  (len={name.Length}, spaces={name.Count(c => c == ' ')})");
+        Console.WriteLine();
+
+        try
+        {
+            var createResp = await groupService.CreateAsync(
+                new CreateGroupRequest { ParentId = 0, GroupName = name });
+            Console.WriteLine($"  Create -> code={createResp.Code}, msg={createResp.Msg}, data={createResp.Data}");
+            Console.WriteLine();
+
+            Console.WriteLine("  Reading back via GetTreeAsync()...");
+            var tree = await groupService.GetTreeAsync();
+            if (!tree.IsSuccess)
+            {
+                Console.WriteLine($"  Tree error: {tree.Code} - {tree.Msg}");
+                return;
+            }
+
+            var match = FindByPrefix(tree.Data, "CLI Space Test");
+            if (match is null)
+            {
+                Console.WriteLine("  Created group NOT found in tree.");
+                return;
+            }
+
+            var stored = match.GroupName;
+            Console.WriteLine($"  Stored groupName = [{stored}]  (len={stored.Length}, spaces={stored.Count(c => c == ' ')})");
+            Console.WriteLine(stored == name
+                ? "  RESULT: spaces PRESERVED (matches sent value)."
+                : "  RESULT: spaces CHANGED by API (sent != stored).");
+        }
+        catch (FreshlianceException ex)
+        {
+            Console.WriteLine($"  Exception: {ex.Code} - {ex.Message}");
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"  HTTP Error: {ex.Message}");
+        }
+    }
+
+    private static GroupTreeNodeResponse? FindByPrefix(IEnumerable<GroupTreeNodeResponse>? nodes, string prefix)
+    {
+        if (nodes is null) return null;
+        foreach (var node in nodes)
+        {
+            if (node.GroupName.Replace(" ", "").StartsWith(prefix.Replace(" ", ""), StringComparison.Ordinal))
+                return node;
+            var child = FindByPrefix(node.SubDeviceGroupList, prefix);
+            if (child is not null) return child;
+        }
+        return null;
     }
 
     private static async Task RunRealDemoAsync(string appId, string keyFile)

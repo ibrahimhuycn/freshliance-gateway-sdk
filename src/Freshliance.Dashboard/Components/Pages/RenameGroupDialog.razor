@@ -1,0 +1,53 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Rename Group</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_groupName"
+                          Label="Group Name"
+                          Required="true"
+                          RequiredError="Group name is required."
+                          Immediate="true"
+                          For="@(() => _groupName)"
+                          data-testid="input-group-name" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel" data-testid="btn-cancel-dialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" data-testid="btn-submit-dialog">
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public int GroupId { get; set; }
+    [Parameter] public string GroupName { get; set; } = "";
+
+    private MudForm _form = null!;
+    private string _groupName = "";
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(_groupName))
+            _groupName = GroupName;
+    }
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+
+        var request = new UpdateGroupRequest
+        {
+            GroupId = GroupId,
+            GroupName = _groupName
+        };
+        MudDialog.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

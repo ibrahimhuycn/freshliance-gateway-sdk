@@ -18,5 +18,5 @@ public class DeviceDataService : IDeviceDataService
 
     /// <summary>See <see cref="IDeviceDataService.GetAlarmPageAsync"/>.</summary>
     public Task<FreshlianceResponse<PageResult<AlarmDataResponse>>> GetAlarmPageAsync(GetAlarmDataRequest request, CancellationToken ct = default)
-        => _client.PostAsync<PageResult<AlarmDataResponse>>("gw.deviceAlarmData.page", request, ct);
+        => _client.PostAsync<PageResult<AlarmDataResponse>>("gw.deviceAlarm.page", request, ct);
 }

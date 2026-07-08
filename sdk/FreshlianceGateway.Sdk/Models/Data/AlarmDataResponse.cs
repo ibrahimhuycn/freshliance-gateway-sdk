@@ -62,7 +62,7 @@ public class AlarmDataResponse
     /// <summary>
     /// The UTC timestamp when the alarm occurred.
     /// </summary>
-    [JsonPropertyName("alarmTime")] public string AlarmTime { get; set; } = "";
+    [JsonPropertyName("alarmTime")] public long AlarmTime { get; set; }
     /// <summary>
     /// The name of the director or supervisor assigned.
     /// </summary>
@@ -86,11 +86,11 @@ public class AlarmDataResponse
     /// <summary>
     /// The UTC timestamp when the record was created.
     /// </summary>
-    [JsonPropertyName("createTime")] public string? CreateTime { get; set; }
+    [JsonPropertyName("createTime")] public long CreateTime { get; set; }
     /// <summary>
     /// The UTC timestamp when the record was last updated.
     /// </summary>
-    [JsonPropertyName("updateTime")] public string? UpdateTime { get; set; }
+    [JsonPropertyName("updateTime")] public long UpdateTime { get; set; }
     /// <summary>
     /// Indicates whether the alarm record has been soft-deleted.
     /// </summary>

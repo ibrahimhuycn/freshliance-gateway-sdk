@@ -1,0 +1,170 @@
+@page "/alarms"
+
+<MudText Typo="Typo.h4" Class="mb-4" data-testid="page-title">Alarms</MudText>
+
+<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mb-4" Wrap="Wrap.Wrap">
+    <MudSelect T="int?"
+               Value="_selectedRecordId"
+               ValueChanged="OnDeviceSelected"
+               Label="Device"
+               Variant="Variant.Outlined"
+               Dense="true"
+               data-testid="filter-device"
+               Style="min-width:200px;">
+        <MudSelectItem Value="@((int?)null)">All devices</MudSelectItem>
+        @foreach (var device in _devices)
+        {
+            <MudSelectItem Value="@device.RecordId">@device.DeviceName</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudSelect T="int?"
+               Value="_alarmPropertyFilter"
+               ValueChanged="OnAlarmPropertyChanged"
+               Label="Property"
+               Variant="Variant.Outlined"
+               Dense="true"
+               data-testid="filter-alarm-property"
+               Style="min-width:160px;">
+        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+        <MudSelectItem Value="1">Temperature</MudSelectItem>
+        <MudSelectItem Value="2">Humidity</MudSelectItem>
+        <MudSelectItem Value="3">Illumination</MudSelectItem>
+        <MudSelectItem Value="4">CO2</MudSelectItem>
+    </MudSelect>
+
+    <MudSelect T="int?"
+               Value="_alarmTypeFilter"
+               ValueChanged="OnAlarmTypeChanged"
+               Label="Type"
+               Variant="Variant.Outlined"
+               Dense="true"
+               data-testid="filter-alarm-type"
+               Style="min-width:120px;">
+        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+        <MudSelectItem Value="1">Low</MudSelectItem>
+        <MudSelectItem Value="2">High</MudSelectItem>
+    </MudSelect>
+
+    <MudSelect T="int?"
+               Value="_handleStatusFilter"
+               ValueChanged="OnHandleStatusChanged"
+               Label="Status"
+               Variant="Variant.Outlined"
+               Dense="true"
+               data-testid="filter-handle-status"
+               Style="min-width:140px;">
+        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+        <MudSelectItem Value="1">Processing</MudSelectItem>
+        <MudSelectItem Value="2">Processed</MudSelectItem>
+        <MudSelectItem Value="3">Ignored</MudSelectItem>
+    </MudSelect>
+
+    <MudSelect T="int?"
+               Value="_probeTypeFilter"
+               ValueChanged="OnProbeTypeChanged"
+               Label="Probe"
+               Variant="Variant.Outlined"
+               Dense="true"
+               data-testid="filter-probe-type"
+               Style="min-width:140px;">
+        <MudSelectItem Value="@((int?)null)">All</MudSelectItem>
+        <MudSelectItem Value="0">Built-in</MudSelectItem>
+        <MudSelectItem Value="1">External 1</MudSelectItem>
+        <MudSelectItem Value="2">External 2</MudSelectItem>
+    </MudSelect>
+
+    <MudDateRangePicker DateRange="_dateRange"
+                        DateRangeChanged="OnDateRangeChanged"
+                        Label="Alarm Time"
+                        Variant="Variant.Outlined"
+                        Style="max-width:280px;" />
+</MudStack>
+
+@if (_loadingDevices)
+{
+    <LoadingSkeleton />
+}
+else if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" data-testid="alarms-error">@_error</MudAlert>
+}
+else if (_selectedRecordId is not > 0)
+{
+    <EmptyState Message="Select a device to view its alarm records" Icon="@Icons.Material.Filled.Devices" />
+}
+else if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else
+{
+    <MudDataGrid T="AlarmDataResponse"
+                 ServerData="@LoadGridData"
+                 @ref="_grid"
+                 Dense="true"
+                 Hover="true"
+                 Elevation="0"
+                 RowStyleFunc="RowStyleFunc"
+                 FixedHeader="true"
+                 Height="calc(100vh - 280px)"
+                 data-testid="alarms-grid">
+        <Columns>
+            <TemplateColumn T="AlarmDataResponse" Title="Device">
+                <CellTemplate>
+                    <a class="device-name-link"
+                       @onclick="@(() => NavigateToDevice(context.Item.RecordId))"
+                       @onclick:preventDefault>
+                        @context.Item.DeviceId
+                    </a>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Probe">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">@GetProbeTypeLabel(context.Item.ProbeType)</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Property">
+                <CellTemplate>
+                    <MudIcon Icon="@GetAlarmPropertyIcon(context.Item.AlarmProperty)" Size="Size.Small" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Zone">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small"
+                             Variant="Variant.Filled"
+                             Color="@GetAlarmZoneColor(context.Item.AlarmZone)">
+                        @context.Item.AlarmZone
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Threshold">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">@FormatAlarmThreshold(context.Item)</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Reading">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">@FormatPropertyValue(context.Item)</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Time">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">@FormatAlarmTime(context.Item.AlarmTime)</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AlarmDataResponse" Title="Status">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small"
+                             Variant="Variant.Filled"
+                             Color="@GetHandleStatusColor(context.Item.HandleStatus)">
+                        @GetHandleStatusLabel(context.Item.HandleStatus)
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="AlarmDataResponse" data-testid="pagination-info" />
+        </PagerContent>
+    </MudDataGrid>
+}

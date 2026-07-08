@@ -1,0 +1,65 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Style="background-color: var(--mud-palette-primary); color: white;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" data-testid="hamburger-btn" />
+        <MudText Typo="Typo.h6" Class="ml-2">Freshliance Dashboard</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body2" Class="mr-2" data-testid="user-badge">
+            <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-1" />
+            @((UserPreferences?.UserInfo?.Nickname ?? UserPreferences?.UserInfo?.Email) ?? "User")
+        </MudText>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="2" data-testid="nav-drawer">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4 mb-4">
+            <ErrorSnackbar>
+                @Body
+            </ErrorSnackbar>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    [Inject] private UserPreferenceService UserPreferences { get; set; } = null!;
+    [Inject] private IUserService UserService { get; set; } = null!;
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await UserPreferences.LoadAsync(UserService);
+        }
+        catch (Exception)
+        {
+            // Non-critical; UI still works without user preferences
+        }
+    }
+
+    private static readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#1565C0",
+            Secondary = "#26A69A",
+            Success = "#4CAF50",
+            Error = "#F44336",
+            Warning = "#FF9800",
+            Info = "#2196F3"
+        }
+    };
+}
