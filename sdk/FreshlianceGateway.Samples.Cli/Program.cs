@@ -1,5 +1,8 @@
 ﻿using System.Text.Json;
 using FreshlianceGateway.Sdk;
+using FreshlianceGateway.Sdk.Core;
+using FreshlianceGateway.Sdk.Models;
+using FreshlianceGateway.Sdk.Models.Data;
 using FreshlianceGateway.Sdk.Models.Group;
 using FreshlianceGateway.Sdk.Models.User;
 using FreshlianceGateway.Sdk.Services;
@@ -13,6 +16,7 @@ internal static class Program
     {
         bool mock = false;
         bool groupSpaceTest = false;
+        bool alarmProbe = false;
         string? appId = null;
         string? keyFile = null;
 
@@ -25,6 +29,9 @@ internal static class Program
                     break;
                 case "--group-space-test":
                     groupSpaceTest = true;
+                    break;
+                case "--alarm-probe":
+                    alarmProbe = true;
                     break;
                 case "--app-id":
                     if (i + 1 < args.Length) appId = args[++i];
@@ -53,6 +60,8 @@ internal static class Program
         {
             if (groupSpaceTest)
                 await RunGroupSpaceTestAsync(appId, keyFile);
+            else if (alarmProbe)
+                await RunAlarmProbeAsync(appId, keyFile);
             else
                 await RunRealDemoAsync(appId, keyFile);
             return 0;
@@ -71,6 +80,7 @@ internal static class Program
         Console.WriteLine("  --app-id <id>       Freshliance application ID");
         Console.WriteLine("  --key-file <path>   Path to RSA private key PEM file");
         Console.WriteLine("  --group-space-test  Create a group with spaces and read it back (real API)");
+        Console.WriteLine("  --alarm-probe       Probe which alarm-page method the API accepts (real API)");
         Console.WriteLine("  --help, -h          Show this help");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -363,6 +373,43 @@ internal static class Program
             }
             return await base.SendAsync(request, ct);
         }
+    }
+
+    private static async Task RunAlarmProbeAsync(string appId, string keyFile)
+    {
+        var key = await File.ReadAllTextAsync(keyFile);
+
+        var services = new ServiceCollection();
+        services.AddFreshlianceGateway(options =>
+        {
+            options.AppId = appId;
+            options.PrivateKeyPem = key;
+        });
+
+        var provider = services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        var client = scope.ServiceProvider.GetRequiredService<FreshlianceClient>();
+
+        Console.WriteLine("=====================================");
+        Console.WriteLine("[ALARM METHOD PROBE]");
+        Console.WriteLine("  Comparing gw.deviceAlarmData.page vs gw.deviceAlarm.page");
+        Console.WriteLine();
+
+        var request = new GetAlarmDataRequest { RecordId = 1, AlarmProperty = 1, PageNum = 1, PageSize = 1 };
+        foreach (var method in new[] { "gw.deviceAlarmData.page", "gw.deviceAlarm.page" })
+        {
+            try
+            {
+                var resp = await client.PostAsync<PageResult<AlarmDataResponse>>(method, request);
+                Console.WriteLine($"  {method,-26} -> code={resp.Code}, msg={resp.Msg}, total={resp.Data?.Total}");
+            }
+            catch (FreshlianceException ex)
+            {
+                Console.WriteLine($"  {method,-26} -> EXCEPTION code={ex.Code}, msg={ex.Message}");
+            }
+        }
+        Console.WriteLine();
+        Console.WriteLine("  A method-not-found / invalid-method error identifies the wrong name.");
     }
 
     private static async Task RunGroupSpaceTestAsync(string appId, string keyFile)
