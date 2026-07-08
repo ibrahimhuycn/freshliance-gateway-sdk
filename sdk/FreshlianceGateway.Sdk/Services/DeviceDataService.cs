@@ -17,6 +17,12 @@ public class DeviceDataService : IDeviceDataService
         => _client.PostAsync<PageResult<DeviceDataResponse>>("gw.deviceData.page", request, ct);
 
     /// <summary>See <see cref="IDeviceDataService.GetAlarmPageAsync"/>.</summary>
+    /// <remarks>
+    /// The gateway docs are self-contradictory here: the "Interface Method" heading lists
+    /// <c>gw.deviceAlarmData.page</c>, but the request example uses <c>gw.deviceAlarm.page</c>.
+    /// Verified against the live gateway: <c>gw.deviceAlarm.page</c> returns <c>code=0</c> (success),
+    /// while <c>gw.deviceAlarmData.page</c> returns <c>40000 Parameter error</c>. Use the former.
+    /// </remarks>
     public Task<FreshlianceResponse<PageResult<AlarmDataResponse>>> GetAlarmPageAsync(GetAlarmDataRequest request, CancellationToken ct = default)
         => _client.PostAsync<PageResult<AlarmDataResponse>>("gw.deviceAlarm.page", request, ct);
 }
