@@ -32,7 +32,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.LightMode" Size="Size.Small" Class="mr-1" /> Light
                     </MudText>
                     <MudText Typo="Typo.body2" Class="mt-1" data-testid="reading-light">
-                        @Data.Light.Value:F0 lux
+                        @($"{Data.Light.Value:F0} lux")
                     </MudText>
                 </MudItem>
             }
@@ -43,7 +43,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Co2" Size="Size.Small" Class="mr-1" /> CO₂
                     </MudText>
                     <MudText Typo="Typo.body2" Class="mt-1" data-testid="reading-co2">
-                        @Data.Co2.Value:F0 ppm
+                        @($"{Data.Co2.Value:F0} ppm")
                     </MudText>
                 </MudItem>
             }

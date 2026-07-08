@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using ApexCharts;
 using Freshliance.Dashboard.Services;
 using FreshlianceGateway.Sdk;
@@ -184,8 +185,9 @@ public partial class DeviceDetail
             }
         }
 
-        alarmTask.Result.EnsureSuccess();
-        _alarms = alarmTask.Result.Data?.Rows ?? [];
+        var alarmResult = await alarmTask;
+        alarmResult.EnsureSuccess();
+        _alarms = alarmResult.Data?.Rows ?? [];
 
         _isProbeDataLoading = false;
     }
@@ -257,8 +259,10 @@ public partial class DeviceDetail
         var fileName = $"{_device?.DeviceName ?? "device"}_probe{probeType}_{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
         var dataUrl = $"data:text/csv;base64,{base64}";
 
+        var fileNameJs = JsonSerializer.Serialize(fileName);
+        var dataUrlJs = JsonSerializer.Serialize(dataUrl);
         await JsRuntime.InvokeVoidAsync("eval",
-            $"var a=document.createElement('a');a.href='{dataUrl}';a.download='{fileName}';document.body.appendChild(a);a.click();document.body.removeChild(a);");
+            $"var a=document.createElement('a');a.href={dataUrlJs};a.download={fileNameJs};document.body.appendChild(a);a.click();document.body.removeChild(a);");
     }
 
     private static string GetProbeLabel(int probeType) => probeType switch
@@ -280,15 +284,16 @@ public partial class DeviceDetail
 
     private static string GetAlarmTypeName(int type) => type switch
     {
-        1 => "Upper Limit",
-        2 => "Lower Limit",
+        1 => "Low",
+        2 => "High",
         _ => $"Type {type}"
     };
 
     private static string GetHandleStatusName(int status) => status switch
     {
-        0 => "Unhandled",
-        1 => "Handled",
+        1 => "Processing",
+        2 => "Processed",
+        3 => "Ignored",
         _ => $"Status {status}"
     };
 
