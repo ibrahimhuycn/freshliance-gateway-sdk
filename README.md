@@ -2,6 +2,8 @@
 
 .NET client library for the [Freshliance Gateway Partner API](https://api.freshliance.com/en/gateway/Overview.html). Provides typed access to all 28 endpoints with automatic RSA2 signature handling.
 
+The repo also ships a [Blazor Server dashboard](#blazor-dashboard-demo-ui) that demonstrates the SDK end-to-end with a real UI.
+
 ## Installation
 
 ```bash
@@ -94,6 +96,28 @@ AlarmProperty alarmProp = AlarmProperty.Temperature;
 cd sdk/FreshlianceGateway.Samples.Cli
 dotnet run -- --mock          # show what each endpoint would send
 dotnet run -- --app-id YOUR_ID --key-file private.pem  # real API call
+```
+
+Diagnostic modes against the live API: `--group-space-test` (reproduces the gateway's `groupName` space-stripping bug) and `--alarm-probe` (verifies the alarm-page method name).
+
+## Blazor Dashboard (demo UI)
+
+A Blazor Server app in [`src/Freshliance.Dashboard`](src/Freshliance.Dashboard) demonstrates the SDK end-to-end with a MudBlazor UI (devices, device detail with charts, groups, alarms, templates, settings). It consumes the SDK via a project reference and is **not** part of `sdk/FreshlianceGateway.slnx` — build and run it separately.
+
+```bash
+dotnet run --project src/Freshliance.Dashboard   # http://localhost:5000
+```
+
+Provide credentials via `src/Freshliance.Dashboard/appsettings.secrets.json` (gitignored), which overrides `appsettings.Development.json`:
+
+```json
+{
+  "Freshliance": {
+    "AppId": "your-app-id",
+    "PrivateKey": "path/to/private.pem",
+    "PublicKey": "path/to/public.pem"
+  }
+}
 ```
 
 ## API Documentation
